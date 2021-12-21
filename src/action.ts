@@ -7,13 +7,14 @@ import { put } from "httpie";
 import { get_docs, DocFiles } from "./fs";
 import { transform_cloudflare, transform_docs } from "./transform";
 
-const CF_ACC_ID = "32a8245cd45a24083dd0acae1d482048";
-const CF_NS_ID = "20394261e26444aaa7ad8292db818037";
+const CF_ACC_ID = core.getInput("cf_acc_id");
+const CF_NS_ID = core.getInput("cf_ns_id");
 
 const API_ROOT = "https://api.cloudflare.com/client/v4/";
 const KV_WRITE = `accounts/${CF_ACC_ID}/storage/kv/namespaces/${CF_NS_ID}/bulk`;
 
 async function get_repo(
+	target_org: string,
 	target_repo: string,
 	target_branch: string,
 	docs_path: string,
@@ -27,7 +28,7 @@ async function get_repo(
 	// this is basically magic
 	await exec.exec("git", [
 		"clone",
-		`https://github.com/sveltejs/${target_repo}.git`,
+		`https://github.com/${target_org}/${target_repo}.git`,
 		"--no-checkout",
 		"--branch",
 		target_branch,
@@ -53,22 +54,24 @@ async function get_repo(
 }
 
 async function run() {
+	const target_org = core.getInput("org");
 	const target_repo = core.getInput("repo");
 	const target_branch = core.getInput("branch");
 	const CF_TOKEN = core.getInput("cf_token");
 	const docs_path = core.getInput("docs_path");
 	const pkg_path = core.getInput("pkg_path");
+	const project_name = core.getInput("project_name");
 
 	if (target_branch !== "main" && target_branch !== "master") {
 		core.setFailed("Branch deploys are not yet supported.");
 	}
 
 	try {
-		await get_repo(target_repo, target_branch, docs_path, pkg_path);
+		await get_repo(target_org, target_repo, target_branch, docs_path, pkg_path);
 	} catch (e) {
 		core.warning(e.message);
 		core.setFailed(
-			`Failed to clone repository: https://github.com/sveltejs/${target_repo}.git#${target_branch}`
+			`Failed to clone repository: https://github.com/${target_org}/${target_repo}.git#${target_branch}`
 		);
 	}
 
@@ -85,7 +88,7 @@ async function run() {
 	const transformed_docs = await Promise.all(
 		docs.map(([project, docs]) =>
 			// @ts-ignore
-			transform_docs(docs, project)
+			transform_docs(docs, project_name || project)
 		)
 	);
 

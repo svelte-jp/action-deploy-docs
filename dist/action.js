@@ -29001,13 +29001,14 @@ async function transform(files, project) {
 
 // docs: Array<Record<string, unknown>>, { project, type, keyby, version }
 
-const CF_ACC_ID = "32a8245cd45a24083dd0acae1d482048";
-const CF_NS_ID = "20394261e26444aaa7ad8292db818037";
+const CF_ACC_ID = core$4.getInput("cf_acc_id");
+const CF_NS_ID = core$4.getInput("cf_ns_id");
 
 const API_ROOT = "https://api.cloudflare.com/client/v4/";
 const KV_WRITE = `accounts/${CF_ACC_ID}/storage/kv/namespaces/${CF_NS_ID}/bulk`;
 
 async function get_repo(
+	target_org,
 	target_repo,
 	target_branch,
 	docs_path,
@@ -29021,7 +29022,7 @@ async function get_repo(
 	// this is basically magic
 	await exec_1.exec("git", [
 		"clone",
-		`https://github.com/sveltejs/${target_repo}.git`,
+		`https://github.com/${target_org}/${target_repo}.git`,
 		"--no-checkout",
 		"--branch",
 		target_branch,
@@ -29047,22 +29048,24 @@ async function get_repo(
 }
 
 async function run() {
+	const target_org = core$4.getInput("org");
 	const target_repo = core$4.getInput("repo");
 	const target_branch = core$4.getInput("branch");
 	const CF_TOKEN = core$4.getInput("cf_token");
 	const docs_path = core$4.getInput("docs_path");
 	const pkg_path = core$4.getInput("pkg_path");
+	const project_name = core$4.getInput("project_name");
 
 	if (target_branch !== "main" && target_branch !== "master") {
 		core$4.setFailed("Branch deploys are not yet supported.");
 	}
 
 	try {
-		await get_repo(target_repo, target_branch, docs_path, pkg_path);
+		await get_repo(target_org, target_repo, target_branch, docs_path, pkg_path);
 	} catch (e) {
 		core$4.warning(e.message);
 		core$4.setFailed(
-			`Failed to clone repository: https://github.com/sveltejs/${target_repo}.git#${target_branch}`
+			`Failed to clone repository: https://github.com/${target_org}/${target_repo}.git#${target_branch}`
 		);
 	}
 
@@ -29079,7 +29082,7 @@ async function run() {
 	const transformed_docs = await Promise.all(
 		docs.map(([project, docs]) =>
 			// @ts-ignore
-			transform(docs, project)
+			transform(docs, project_name || project)
 		)
 	);
 
