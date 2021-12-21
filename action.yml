@@ -3,11 +3,20 @@ name: "Generate Docs"
 description: "Generate docs from markdown"
 
 inputs:
+  org:
+    description: "the target org of the docs"
+    required: true
   repo:
     description: "the target repo of the docs"
     required: true
   branch:
     description: "the target branch of the docs"
+    required: true
+  cf_acc_id:
+    description: "the cloudflare account id"
+    required: true
+  cf_ns_id:
+    description: "the cloudflare KV namespace id"
     required: true
   cf_token:
     description: "the cloudflare token to use for deploying the docs"
@@ -20,6 +29,9 @@ inputs:
     description: "the path to your packages in a monorepo (without a leading slash)"
     required: false
     default: "packages"
+  project_name:
+    description: "advanced option to override the project name (if not set, the project name will be the target repo name)"
+    required: false
 
 runs:
   using: "node12"

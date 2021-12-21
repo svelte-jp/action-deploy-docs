@@ -6016,25 +6016,29 @@ var github$1 = /*@__PURE__*/getDefaultExportFromCjs(github);
 async function run() {
 	try {
 		const token = core$1.getInput("token");
+		const org = core$1.getInput("org");
 		const repo = core$1.getInput("repo");
 		const branch = core$1.getInput("branch");
 		const docs_path = core$1.getInput("docs_path");
 		const pkg_path = core$1.getInput("pkg_path");
+		const project_name = core$1.getInput("project_name");
 
 		console.log(token.length);
 
 		const octokit = github$1.getOctokit(token);
 
 		const dispatchResp = await octokit.rest.actions.createWorkflowDispatch({
-			owner: "sveltejs",
+			owner: org,
 			repo: "sites",
 			workflow_id: "docs-deploy-trigger.yml",
 			ref: "master",
 			inputs: {
+				org,
 				repo,
 				branch,
 				docs_path,
 				pkg_path,
+				project_name,
 			},
 		});
 		core$1.info(`API response status: ${dispatchResp.status} 🚀`);
